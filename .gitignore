@@ -88,3 +88,6 @@ cython_debug/
 
 # Telethon session files
 *.session
+
+# Credentials
+google_api_credentials.json

@@ -1,11 +1,13 @@
 import asyncio
 import os
+import json
 import re
 import zoneinfo
 from datetime import datetime
 
 import dotenv
 from telethon.sync import TelegramClient, events
+from telethon.tl.custom import Conversation
 
 dotenv.load_dotenv()
 
@@ -14,24 +16,50 @@ api_hash = os.environ["API_HASH"]
 bot_token = os.environ["BOT_TOKEN"]
 bot = TelegramClient("getbudbot", api_id, api_hash).start(bot_token=bot_token)
 
-# TODO: Создать secure БДху для хранения пользовательских данных.
-# TODO: Продумать формат записей в БД.
+with open("google_api_credentials.json") as f:
+    GOOGLE_API_CREDENTIALS = json.load(f)
+
+
+async def responser(conv: Conversation):
+    try:
+        # Wait for the response from user.
+        response = await conv.get_response()
+        return response
+    except asyncio.exceptions.TimeoutError:
+        await conv.send_message(
+            "Your response time has expired 👀. You can re-enter your command at any time :)"
+        )
+        return False
 
 
 @bot.on(events.NewMessage(pattern="/start"))
-async def set_utc_offset(event):
+async def start(event):
     # TODO: Если user вызвал опять команду, то сказать шо уже знакомы
     # Start conversation.
     sender = await event.get_sender()
     async with bot.conversation(sender) as conv:
         # Conversation welcome message.
         await conv.send_message(
-            "**Welcome to the budget bot 💵!**\n"
-            "I will help you to track your budget 😎.\n\n"
-            "To interact with me, you should trigger any available Telegram command from the commands menu"
-            "which is located to the left of the text input panel. Example: /add"
+            "**Welcome to the budget bot!**\n\n"
+            "I will help you to track your budget 😎💵\n\n\n"
+            "Firstly, you should take a few steps❗️\n\n"
+            f"1️⃣ Make a copy of [this file]({os.environ['TEMPLATE_URL']}) "
+            "to your [Google Drive](https://drive.google.com/drive/)\n\n"
+            "2️⃣ Share your copy with this Google service email (add as Editor):\n"
+            f"{GOOGLE_API_CREDENTIALS['client_email']}\n"
+            "It's secure, because it can't be used by other users.\n\n"
+            "3️⃣ Send me your copy Google Sheet IP to me "
+            "(it is after /spreadsheets/d/ between slashes in url of your sheet)."
         )
-        # TODO: Response
+        response = await responser(conv)
+        if not response:
+            return
+
+
+@bot.on(events.NewMessage(pattern="/timezone"))
+async def timezone(event):
+    sender = await event.get_sender()
+    async with bot.conversation(sender) as conv:
         # TODO: Может быть должна быть отдельная команда
         # TODO: Разобрать на функции
         await conv.send_message(
@@ -41,13 +69,8 @@ async def set_utc_offset(event):
             "If you want quit, enter: q!"
         )
         while True:
-            try:
-                # Wait for the response from user.
-                response = await conv.get_response()
-            except asyncio.exceptions.TimeoutError:
-                await conv.send_message(
-                    "Your response time has expired 👀. You can re-enter your command at any time :)"
-                )
+            response = await responser(conv)
+            if not response:
                 break
 
             # Quit.
@@ -85,21 +108,21 @@ async def set_utc_offset(event):
             s += "\nIs it correct?\n[yes/no]"
             await conv.send_message(s)
 
-            send_yes = False
+            sent_yes = False
             while True:
                 response = await conv.get_response()
                 if response.text in ["no", "n", "N", "Not"]:
                     await conv.send_message("Well, let's try again! 🔄")
                     break
                 elif response.text in ["yes", "y", "Y", "Yes"]:
-                    send_yes = True
+                    sent_yes = True
                     break
                 else:
                     await conv.send_message("Please, enter yes or no.")
                     continue
-            if not send_yes:
+            if not sent_yes:
                 continue
-            await conv.send_message("Fine! Fuck you! 🤠")
+            
             break
 
     raise events.StopPropagation
