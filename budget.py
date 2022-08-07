@@ -1,3 +1,9 @@
+# TODO: Move each command to separate module.
+# TODO: Change q! option on other format (maybe button)
+# TODO: Add logic on incomes
+# TODO: Add logic on aims
+# TODO: Add logic on affordable spending
+# TODO: Check safety of current creds usage (can we check user data in spreadsheet?)
 import asyncio
 import json
 import os
