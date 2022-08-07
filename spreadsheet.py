@@ -4,7 +4,6 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from oauth2client.service_account import ServiceAccountCredentials
 
-
 CREDENTIALS_FILE_PATH = "google_api_credentials.json"
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -64,6 +63,10 @@ class Spreadsheet:
 
         # Google API sent only strings. We should convert them to appropriate type.
         df = pd.DataFrame(values["values"][1:], columns=values["values"][0])
+
+        if df.empty:
+            return df
+
         types_info = {}
         for c, x in df.iloc[0].items():
             types_info[c] = find_string_real_type(x)

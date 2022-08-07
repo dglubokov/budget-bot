@@ -91,3 +91,6 @@ cython_debug/
 
 # Credentials
 google_api_credentials.json
+
+# local db name
+spreadsheets_db.json
